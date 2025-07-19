@@ -57,7 +57,6 @@ Com o modelo baixado:
 git clone https://github.com/EmmanoelMonteiro/basic-chatbot-langchain-ia.git
 cd basic-chatbot-langchain-ia
 ```
-(Substitua `SeuUsuario/NomeDoSeuRepositorio.git` pelo caminho real do seu repositório).
 
 2. Crie um ambiente virtual (no diretório raiz do projeto):
 ```Bash
