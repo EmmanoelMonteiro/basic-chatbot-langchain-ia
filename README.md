@@ -54,8 +54,8 @@ Com o modelo baixado:
 ### 4. Configuração do Ambiente Python
 1. Clone este repositório para a sua máquina:
 ```Bash
-git clone https://github.com/SeuUsuario/NomeDoSeuRepositorio.git
-cd NomeDoSeuRepositorio
+git clone https://github.com/EmmanoelMonteiro/basic-chatbot-langchain-ia.git
+cd basic-chatbot-langchain-ia
 ```
 (Substitua `SeuUsuario/NomeDoSeuRepositorio.git` pelo caminho real do seu repositório).
 
