@@ -1,5 +1,5 @@
 # basic-chatbot-langchain-ia
-Chatbot com LLM Local (LM Studio, LangChain, Python)
+🤖 Chatbot com LLM Local (LM Studio, LangChain, Python) + CI Automatizado
 
 ## 📝 Descrição do Projeto
 Este projeto apresenta um chatbot simples construído em Python utilizando a biblioteca LangChain para orquestração da conversa. A particularidade e grande vantagem deste chatbot é que ele se comunica com um Large Language Model (LLM) que roda localmente na sua máquina, sem a necessidade de uma conexão com a internet para inferência (após o download inicial do modelo).
@@ -17,6 +17,10 @@ O objetivo principal deste projeto é demonstrar a capacidade de:
 * Utilização de um LLM rodando localmente (**Gemma-2-2B-IT**, configurado via LM Studio).
 * Configuração de ambiente virtual Python para isolamento de dependências.
 * Função de teste para verificar a comunicação com o servidor LLM do LM Studio.
+* **Pipeline de CI** integrado com GitHub Actions
+* **Testes automatizados** com mocking do LLM
+* **Verificação de qualidade** de código com flake8
+* **Ambiente isolado** para desenvolvimento e testes
 
 ## 🛠️ Tecnologias Utilizadas
 * **Python 3.9+**
@@ -69,14 +73,9 @@ python -m venv .venv
 ```
 Você verá `(.venv)` no início da linha de comando, indicando que o ambiente está ativado.
 
-5. Criação do arquivo `requirements.txt`
-Crie um arquivo chamado `requirements.txt` na raiz do seu projeto com o seguinte conteúdo:
-
-```
-langchain
-langchain-community
-langchain-openai
-python-dotenv
+5. Instale as dependências
+```Bash
+pip install -r requirements.txt
 ```
 
 ### 6. Instalação das Dependências Python
@@ -102,6 +101,41 @@ Com o LM Studio servindo o modelo e o ambiente Python configurado:
 python main.py
 ```
 
+## 🧪 Executando Testes
+```Bash
+# Todos os testes
+pytest tests/
+
+# Apenas linting
+flake8 .
+
+# Teste de CI local (sem LM Studio)
+python main.py --ci-test
+```
+
+## ⚙️ Pipeline de CI
+O workflow `.github/workflows/python-ci.yml` executa automaticamente:
+
+1. Linting com flake8
+2. Testes unitários com pytest
+3. Validação da configuração do chatbot
+4. Teste de conexão com mock LLM
+
+```Bash
+name: Python CI
+on: [pull_request, push]
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+      - run: pip install -r requirements.txt
+      - run: flake8 .
+      - run: pytest tests/
+      - run: python main.py --ci-test
+```
+
 **Interação**
 * O chatbot primeiro tentará conectar-se ao LLM. Se a conexão for bem-sucedida, ele iniciará o loop de conversa.
 * Digite suas perguntas e pressione Enter.
@@ -110,8 +144,13 @@ python main.py
 ## 📁 Estrutura do Projeto
 ```shell
 .
-├── .env                  # Variáveis de ambiente (URL do servidor LLM)
-├── main.py               # Script principal do chatbot
-├── requirements.txt      # Lista de dependências Python
-└── README.md             # Este arquivo
+├── .github/
+│   └── workflows/
+│       └── python-ci.yml    # Configuração de CI
+├── tests/
+│   ├── __init__.py
+│   └── test_chatbot.py      # Testes automatizados
+├── main.py                  # Código principal
+├── requirements.txt         # Dependências
+└── .env.example             # Modelo de variáveis
 ```
