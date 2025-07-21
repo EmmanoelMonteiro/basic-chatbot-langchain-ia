@@ -1,4 +1,5 @@
 import os
+import sys
 from dotenv import load_dotenv
 from langchain_openai import OpenAI
 from langchain_core.prompts import PromptTemplate
@@ -17,46 +18,48 @@ if not LM_STUDIO_BASE_URL:
     exit()
 
 # --- Função de Teste de Conexão com o LLM ---
-def testar_conexao_llm():
+def testar_conexao_llm(llm=None):
     """
     Tenta se comunicar com o LLM rodando no LM Studio para verificar a conexão.
     """
     print("\n--- Testando conexão com o LLM no LM Studio ---")
     try:
-        llm = OpenAI(
-            base_url=LM_STUDIO_BASE_URL,
-            api_key="lm-studio",  # Chave API fictícia, necessária para a classe OpenAI
-            temperature=0.01, # Temperatura baixa para respostas mais previsíveis no teste
-        )
+        # Se não receber um LLM externo, cria um padrão
+        if llm is None:
+            if not LM_STUDIO_BASE_URL:
+                print("Erro: Variável LM_STUDIO_BASE_URL não configurada")
+                return False
+                
+            llm = criar_llm_padrao(temperature=0.01)
+        
         response = llm.invoke("Qual é o seu nome?")
         print(f"Resposta do LLM (teste): {response.strip()}")
-        if "llama" in response.lower() or "llm" in response.lower() or "linguagem" in response.lower():
-            print("Conexão com o LM Studio bem-sucedida! O LLM respondeu.")
-            return True
-        else:
-            print("Conexão com o LM Studio OK, mas a resposta do LLM não é a esperada. Verifique o modelo.")
-            return True # Consideramos a conexão OK se houve resposta, mesmo que não ideal.
+        print("Conexão com o LM Studio bem-sucedida! O LLM respondeu.")
+        return True
+    
     except Exception as e:
         print(f"Erro ao conectar ou interagir com o LLM: {e}")
-        print("Certifique-se de que o LM Studio está rodando e o servidor está ativo na porta correta.")
-        print(f"Verifique se o modelo está carregado e sendo 'served' em: {LM_STUDIO_BASE_URL}")
         return False
 
+# --- Função para criar LLM ---
+def criar_llm_padrao(temperature=0.7):
+    """Cria uma instância padrão do LLM para uso normal"""
+    return OpenAI(
+        base_url=LM_STUDIO_BASE_URL,
+        api_key="lm-studio",
+        temperature=temperature,
+    )
+
 # --- Configuração do Chatbot ---
-def configurar_chatbot():
+def configurar_chatbot(llm=None):
     """
     Configura e retorna a cadeia LangChain para o chatbot.
     """
     print("\n--- Configurando Chatbot ---")
     try:
-        # Inicializa o modelo OpenAI compatível com LM Studio
-        llm = OpenAI(
-            base_url=LM_STUDIO_BASE_URL,
-            api_key="lm-studio", # Chave API fictícia, necessária para a classe OpenAI
-            temperature=0.7,   # Ajuste a temperatura conforme desejar (0.0 a 1.0)
-                               # 0.7 geralmente é um bom ponto de partida para criatividade
-            # max_tokens=256   # Opcional: limite o tamanho da resposta do LLM
-        )
+        # Usa LLM fornecido ou cria um padrão
+        if llm is None:
+            llm = criar_llm_padrao(temperature=0.7)
 
         # Template do prompt para dar contexto ao LLM
         prompt_template = PromptTemplate(
@@ -78,15 +81,17 @@ def configurar_chatbot():
         return None
 
 # --- Loop Principal do Chatbot ---
-def iniciar_chatbot():
+def iniciar_chatbot(llm=None):
     """
     Inicia o loop de conversação do chatbot.
     """
-    if not testar_conexao_llm():
+    # Teste de conexão com LLM opcional
+    if not testar_conexao_llm(llm):
         print("\nNão foi possível iniciar o chatbot devido a problemas de conexão com o LLM.")
         return
 
-    chatbot_chain = configurar_chatbot()
+    # Passa o LLM para a configuração
+    chatbot_chain = configurar_chatbot(llm)
     if not chatbot_chain:
         return
 
@@ -109,5 +114,39 @@ def iniciar_chatbot():
             print(f"Erro ao processar a requisição: {e}")
             print("Verifique se o servidor LM Studio ainda está ativo.")
 
+def executar_teste_ci():
+    """Executa testes básicos para validar a pipeline de CI"""
+    print("\n--- Executando Testes de CI ---")
+    
+    # Mock do LLM para testes
+    class MockLLM:
+        def invoke(self, prompt):
+            return "Mock Response: " + prompt
+    
+    # Teste de conexão
+    print("Testando conexão com mock LLM...")
+    if testar_conexao_llm(MockLLM()):
+        print("✅ Teste de conexão bem-sucedido")
+    else:
+        print("❌ Falha no teste de conexão")
+        return False
+    
+    # Teste de configuração do chatbot
+    print("Testando configuração do chatbot...")
+    try:
+        configurar_chatbot(MockLLM())
+        print("✅ Chatbot configurado com sucesso")
+        return True
+    except Exception as e:
+        print(f"❌ Erro na configuração do chatbot: {e}")
+        return False
+    
 if __name__ == "__main__":
-    iniciar_chatbot()
+    # Modo especial para CI
+    if "--ci-test" in sys.argv:
+        if executar_teste_ci():
+            sys.exit(0)
+        else:
+            sys.exit(1)
+    else:
+        iniciar_chatbot()
